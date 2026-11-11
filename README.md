@@ -61,3 +61,8 @@ append-only turn persistence.
 The initial shared contracts and route configuration live in `src/`. Agent
 behavior, persistence, search integration, streaming, and evaluations will be
 added in subsequent implementation steps.
+
+Turn history is stored as append-only JSONL files under the ignored `data/`
+directory. The storage implementation is exposed through a `TurnStore`
+interface, so the persistence backend can be replaced without changing agent
+logic.

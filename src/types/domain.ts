@@ -47,6 +47,26 @@ export interface TurnUsage {
   totalTokens: number;
 }
 
+export interface ToolCallTrace {
+  request: SearchRequest;
+  resultCount: number;
+  durationMs: number;
+}
+
+export interface StepTrace {
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  toolCalls: ToolCallTrace[];
+  durationMs: number;
+}
+
+export interface TurnTrace {
+  steps: StepTrace[];
+  timeToFirstTokenMs?: number;
+  totalDurationMs: number;
+}
+
 export interface TurnFlags {
   noHistoryForDate?: boolean;
   searchFailed?: boolean;
@@ -67,4 +87,5 @@ export interface TurnRecord {
   evidence: EvidenceCard[];
   flags: TurnFlags;
   usage?: TurnUsage;
+  trace?: TurnTrace;
 }
