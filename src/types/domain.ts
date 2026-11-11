@@ -7,6 +7,12 @@ export const ROUTE_TYPES = [
 
 export type RouteType = (typeof ROUTE_TYPES)[number];
 
+export interface RouteDecision {
+  route: RouteType;
+  reason: string;
+  fallbackUsed: boolean;
+}
+
 export const SEARCH_TOPICS = ["general", "news"] as const;
 
 export type SearchTopic = (typeof SEARCH_TOPICS)[number];

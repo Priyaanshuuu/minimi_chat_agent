@@ -71,3 +71,7 @@ The preparation layer in `src/agent/prepare.ts` uses an injectable clock,
 time-zone-aware date resolution, and bounded history compaction before any
 model call. Relative dates are resolved with `chrono-node`; missing historical
 records are surfaced through explicit preparation flags.
+
+Routing is defined in `src/agent/router.ts` and `src/agent/prompts.ts`. Router
+responses are strict JSON, limited to 20-word reasons, and fail open to the
+search-backed `lookup` route when validation or the router model fails.
