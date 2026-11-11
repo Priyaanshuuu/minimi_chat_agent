@@ -75,3 +75,8 @@ records are surfaced through explicit preparation flags.
 Routing is defined in `src/agent/router.ts` and `src/agent/prompts.ts`. Router
 responses are strict JSON, limited to 20-word reasons, and fail open to the
 search-backed `lookup` route when validation or the router model fails.
+
+The single search tool is defined in `src/search/tool.ts`, with the provider
+contract in `src/search/provider.ts`. Tavily responses are validated, shaped
+into compact evidence cards, de-duplicated by URL, capped by domain, and
+cached briefly for repeated non-reverification queries.
