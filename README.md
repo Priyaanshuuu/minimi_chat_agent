@@ -85,3 +85,8 @@ The budgeted loop in `src/agent/loop.ts` runs bounded search rounds in parallel,
 forces a final answer at route limits, and permits at most one upward
 escalation. Search and model failures remain explicit in the loop result rather
 than becoming silent success responses.
+
+Response validation lives in `src/agent/validate.ts`. Citation IDs are checked
+against retrieved evidence, numeric figures are compared with evidence text,
+and uncertain figures receive an explicit caveat instead of being silently
+accepted.
