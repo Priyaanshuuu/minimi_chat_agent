@@ -1,4 +1,5 @@
 import { runChatTurn, type ChatRequest } from "@/src/server/chat-service";
+import { getRuntimeChatService } from "@/src/server/runtime";
 
 export async function POST(request: Request): Promise<Response> {
   const encoder = new TextEncoder();
@@ -60,12 +61,6 @@ async function parseRequestBody(request: Request): Promise<ChatRequest> {
   };
 
   return payload;
-}
-
-function getRuntimeChatService(): never {
-  throw new Error(
-    "Chat runtime is not configured. Provide the model, search, and store adapters before starting the server.",
-  );
 }
 
 function requireString(value: unknown, fieldName: string): string {

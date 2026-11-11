@@ -58,9 +58,8 @@ chat agent. The implementation follows the architecture described in
 preparation, route-specific budgets, a single search tool, validation, and
 append-only turn persistence.
 
-The initial shared contracts and route configuration live in `src/`. Agent
-behavior, persistence, search integration, streaming, and evaluations will be
-added in subsequent implementation steps.
+Shared contracts, agent behavior, persistence, search integration, streaming,
+and evaluations are organized under `src/`, `app/`, and `evals/`.
 
 Turn history is stored as append-only JSONL files under the ignored `data/`
 directory. The storage implementation is exposed through a `TurnStore`
@@ -94,8 +93,8 @@ accepted.
 The chat transport is exposed at `app/api/chat/route.ts` as a Node.js
 Route Handler using server-sent events. It validates request payloads and
 streams preparation, routing, validation, answer, and error events. The route
-intentionally requires model, search, and store adapters to be wired before
-live requests are enabled.
+wires Anthropic, Tavily, and JSONL adapters lazily on the first request. API
+keys are read only on the server from `.env.local`.
 
 Run the deterministic evaluation suite with:
 
