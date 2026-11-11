@@ -1,8 +1,8 @@
 # Minimi
 
 Minimi is a time-aware, evidence-grounded web-search chat agent. Its central
-design choice is to keep deterministic responsibilities in code—date
-resolution, memory lookup, budgets, evidence shaping, and validation—and use
+design choice is to keep deterministic responsibilities in code date
+resolution, memory lookup, budgets, evidence shaping, and validation and use
 the model for language decisions and answer composition.
 
 ## What it solves
