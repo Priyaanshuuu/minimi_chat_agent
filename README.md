@@ -90,3 +90,9 @@ Response validation lives in `src/agent/validate.ts`. Citation IDs are checked
 against retrieved evidence, numeric figures are compared with evidence text,
 and uncertain figures receive an explicit caveat instead of being silently
 accepted.
+
+The chat transport is exposed at `app/api/chat/route.ts` as a Node.js
+Route Handler using server-sent events. It validates request payloads and
+streams preparation, routing, validation, answer, and error events. The route
+intentionally requires model, search, and store adapters to be wired before
+live requests are enabled.
