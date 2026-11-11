@@ -35,3 +35,29 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 # minimi_chat_agent
+
+## Getting started
+
+Install dependencies and start the development server:
+
+```bash
+npm install
+npm run dev
+```
+
+Copy `.env.example` to `.env.local` and provide the LLM, search-provider, and
+model configuration before starting the application. The application validates
+required configuration when a server-side feature first accesses it; missing
+or invalid values produce an explicit error.
+
+## Project direction
+
+The application is being built as a time-aware, evidence-grounded web-search
+chat agent. The implementation follows the architecture described in
+[`docs/02-design-approach.md`](./docs/02-design-approach.md): deterministic
+preparation, route-specific budgets, a single search tool, validation, and
+append-only turn persistence.
+
+The initial shared contracts and route configuration live in `src/`. Agent
+behavior, persistence, search integration, streaming, and evaluations will be
+added in subsequent implementation steps.
