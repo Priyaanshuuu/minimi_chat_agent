@@ -13,6 +13,7 @@
 # testing
 /coverage
 /data/
+/.eval-build/
 
 # next.js
 /.next/

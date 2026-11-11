@@ -1,0 +1,16 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "rootDir": "..",
+    "outDir": "../.eval-build",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "incremental": false,
+    "paths": {
+      "@/*": ["../*"]
+    }
+  },
+  "include": ["runner.ts", "../src/**/*.ts"],
+  "exclude": ["../node_modules", "../app", "../.next"]
+}

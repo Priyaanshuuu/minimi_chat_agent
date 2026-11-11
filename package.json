@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "eval": "tsc -p evals/tsconfig.json && node evals/run-eval.cjs"
   },
   "dependencies": {
     "chrono-node": "^2.10.3",

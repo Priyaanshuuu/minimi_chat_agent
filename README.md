@@ -96,3 +96,13 @@ Route Handler using server-sent events. It validates request payloads and
 streams preparation, routing, validation, answer, and error events. The route
 intentionally requires model, search, and store adapters to be wired before
 live requests are enabled.
+
+Run the deterministic evaluation suite with:
+
+```bash
+npm run eval
+```
+
+The suite uses a frozen clock and canned evidence, so it does not require API
+keys. It checks date resolution, route validation and escalation, evidence
+shaping, citation validation, and numeric grounding.
