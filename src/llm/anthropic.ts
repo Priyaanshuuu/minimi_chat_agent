@@ -1,8 +1,9 @@
 import type {
   AgentModel,
   AgentModelInput,
+  AgentModelOutput,
 } from "@/src/agent/loop";
-import type { TurnUsage } from "@/src/types/domain";
+import type { SearchRequest, TurnUsage } from "@/src/types/domain";
 
 const ANTHROPIC_MESSAGES_URL = "https://api.anthropic.com/v1/messages";
 const ANTHROPIC_VERSION = "2023-06-01";
@@ -57,14 +58,7 @@ export class AnthropicModel implements AgentModel {
     return extractText(response);
   }
 
-  async generate(input: AgentModelInput): Promise<{
-    kind: "search" | "final";
-    searchRequests?: AgentModelInput["evidence"] extends never
-      ? never
-      : import("@/src/types/domain").SearchRequest[];
-    text?: string;
-    usage: TurnUsage;
-  }> {
+  async generate(input: AgentModelInput): Promise<AgentModelOutput> {
     const response = await this.request({
       system: `${input.systemPrompt}\n\n${structuredOutputInstruction(input.forceFinal)}`,
       messages: [
@@ -104,12 +98,32 @@ export class AnthropicModel implements AgentModel {
       });
 
       if (!response.ok) {
-        throw new Error(`Anthropic request failed with HTTP ${response.status}`);
+        throw new Error(
+          await formatAnthropicError(response.status, response),
+        );
       }
 
       const body = (await response.json()) as unknown;
       if (!isRecord(body)) {
         throw new Error("Anthropic returned an invalid response");
+      }
+
+      async function formatAnthropicError(
+        status: number,
+        response: Response,
+      ): Promise<string> {
+        let detail = "";
+
+        try {
+          const body = (await response.json()) as unknown;
+          if (isRecord(body) && isRecord(body.error) && typeof body.error.message === "string") {
+            detail = `: ${body.error.message}`;
+          }
+        } catch {
+          detail = "";
+        }
+
+        return `Anthropic request failed with HTTP ${status}${detail}`;
       }
 
       return body as AnthropicResponse;
@@ -152,12 +166,7 @@ function extractText(response: AnthropicResponse): string {
   return text.trim();
 }
 
-function parseAgentOutput(response: AnthropicResponse): {
-  kind: "search" | "final";
-  searchRequests?: import("@/src/types/domain").SearchRequest[];
-  text?: string;
-  usage: TurnUsage;
-} {
+function parseAgentOutput(response: AnthropicResponse): AgentModelOutput {
   const text = extractText(response)
     .replace(/^```json\s*/i, "")
     .replace(/\s*```$/i, "")
@@ -188,7 +197,7 @@ function parseAgentOutput(response: AnthropicResponse): {
 
   return {
     kind: "search",
-    searchRequests: parsed.searchRequests as import("@/src/types/domain").SearchRequest[],
+    searchRequests: parsed.searchRequests as SearchRequest[],
     usage,
   };
 }

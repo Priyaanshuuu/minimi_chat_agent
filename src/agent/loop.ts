@@ -102,7 +102,18 @@ export async function runAgentLoop(
       state.usage.totalTokens >= state.budget.maxTokens ||
       elapsedMs(state, now) >= state.budget.maxDurationMs;
 
-    const output = await generateModelOutput(input, state, shouldForceFinal);
+    let output: AgentModelOutput;
+    try {
+      output = await generateModelOutput(input, state, shouldForceFinal);
+    } catch (error) {
+      return completeResult(
+        state,
+        `I could not complete this request because the model failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        "model-failed",
+      );
+    }
     addUsage(state.usage, output.usage);
 
     if (output.kind === "final" || shouldForceFinal) {
@@ -128,17 +139,29 @@ export async function runAgentLoop(
     }
 
     const boundedRequests = searchRequests.slice(0, remainingSearches);
-    const responses = await executeSearches(
+    const executions = await executeSearches(
       input.searchTool,
       boundedRequests,
       state.route === "reverify",
     );
     state.searches += boundedRequests.length;
     state.queries.push(...boundedRequests);
-    state.evidence.push(...responses.flatMap((response) => response.cards));
+    state.evidence.push(
+      ...executions.flatMap(({ response }) => response.cards),
+    );
+    const latestStep = state.steps[state.steps.length - 1];
+    if (latestStep) {
+      latestStep.toolCalls.push(
+        ...executions.map(({ request, response, durationMs }) => ({
+          request,
+          resultCount: response.cards.length,
+          durationMs,
+        })),
+      );
+    }
     state.round += 1;
 
-    const hasFailure = responses.some((response) => response.error);
+    const hasFailure = executions.some(({ response }) => response.error);
     const hasUsableEvidence = state.evidence.length > 0;
     if (hasFailure && !hasUsableEvidence) {
       const escalated = tryEscalate(state, "no-usable-results", false);
@@ -199,13 +222,7 @@ async function generateModelOutput(
 
     return output;
   } catch (error) {
-    return {
-      kind: "final",
-      text: `I could not complete this request because the model failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
-      usage: emptyUsage(),
-    };
+    throw error instanceof Error ? error : new Error(String(error));
   }
 }
 
@@ -213,7 +230,7 @@ async function executeSearches(
   searchTool: WebSearchTool,
   requests: SearchRequest[],
   bypassCache: boolean,
-): Promise<SearchResponse[]> {
+): Promise<SearchExecution[]> {
   return Promise.all(
     requests.map((request) =>
       executeSearch(searchTool, request, bypassCache),
@@ -225,18 +242,33 @@ async function executeSearch(
   searchTool: WebSearchTool,
   request: SearchRequest,
   bypassCache: boolean,
-): Promise<SearchResponse> {
+): Promise<SearchExecution> {
+  const startedAt = Date.now();
   try {
-    return await searchTool.execute(request, { bypassCache });
+    return {
+      request,
+      response: await searchTool.execute(request, { bypassCache }),
+      durationMs: Date.now() - startedAt,
+    };
   } catch (error) {
     return {
-      query: request.query,
-      cards: [],
-      error: `Web search request was invalid: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      request,
+      response: {
+        query: request.query,
+        cards: [],
+        error: `Web search request was invalid: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+      },
+      durationMs: Date.now() - startedAt,
     };
   }
+}
+
+interface SearchExecution {
+  request: SearchRequest;
+  response: SearchResponse;
+  durationMs: number;
 }
 
 function tryEscalate(

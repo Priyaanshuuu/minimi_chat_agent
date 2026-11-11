@@ -9,6 +9,7 @@ export interface ValidationInput {
   answer: string;
   evidence: EvidenceCard[];
   searchFailed?: boolean;
+  skipNumericGrounding?: boolean;
 }
 
 export interface ValidationResult {
@@ -21,10 +22,9 @@ export interface ValidationResult {
 
 export function validateResponse(input: ValidationInput): ValidationResult {
   const citationResult = validateCitations(input.answer, input.evidence);
-  const numericResult = checkNumericGrounding(
-    citationResult.answer,
-    input.evidence,
-  );
+  const numericResult = input.skipNumericGrounding
+    ? { unsupportedFigures: [] }
+    : checkNumericGrounding(citationResult.answer, input.evidence);
   const flags: TurnFlags = {
     ...(input.searchFailed ? { searchFailed: true } : {}),
     ...(citationResult.hasInvalidCitations

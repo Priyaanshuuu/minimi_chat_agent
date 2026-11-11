@@ -96,6 +96,7 @@ export async function runChatTurn(
     answer: loopResult.answer,
     evidence: loopResult.evidence,
     searchFailed: loopResult.stopReason === "search-failed",
+    skipNumericGrounding: loopResult.stopReason === "model-failed",
   });
   const timestamp = (dependencies.clock ?? (() => new Date()))().toISOString();
   const turn: TurnRecord = {
