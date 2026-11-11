@@ -1,8 +1,13 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f5f4f0;
+  --foreground: #1d2521;
+  --muted: #78817b;
+  --line: #dedfd9;
+  --accent: #244b3a;
+  --accent-soft: #e6eee8;
+  --error: #9c3e3e;
 }
 
 @theme inline {
@@ -12,15 +17,245 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.chat-shell {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  padding: 32px 20px;
+  background:
+    radial-gradient(circle at 10% 0%, #e8eee8 0, transparent 30%),
+    var(--background);
+}
+
+.chat-panel {
+  width: 100%;
+  max-width: 760px;
+  min-height: calc(100vh - 64px);
+  display: flex;
+  flex-direction: column;
+  background: rgb(255 255 255 / 72%);
+  border: 1px solid rgb(222 223 217 / 80%);
+  border-radius: 24px;
+  box-shadow: 0 24px 70px rgb(35 54 43 / 9%);
+  overflow: hidden;
+}
+
+.chat-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 38px 42px 30px;
+  border-bottom: 1px solid var(--line);
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+}
+
+.chat-header h1 {
+  margin: 0;
+  font-size: clamp(30px, 5vw, 46px);
+  font-weight: 500;
+  letter-spacing: -0.05em;
+}
+
+.header-description {
+  max-width: 360px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.status-dot,
+.status-pulse {
+  display: block;
+  width: 9px;
+  height: 9px;
+  flex: none;
+  margin-top: 6px;
+  border-radius: 50%;
+  background: #5b9b74;
+  box-shadow: 0 0 0 5px #dcecdf;
+}
+
+.message-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 34px 42px;
+  overflow-y: auto;
+}
+
+.message-row {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.message-row-user {
+  justify-content: flex-end;
+}
+
+.message-bubble {
+  max-width: min(85%, 590px);
+  padding: 14px 17px;
+  border-radius: 16px;
+  font-size: 15px;
+  line-height: 1.65;
+  white-space: pre-wrap;
+}
+
+.message-bubble-assistant {
+  color: var(--foreground);
+  background: var(--accent-soft);
+  border-bottom-left-radius: 5px;
+}
+
+.message-bubble-user {
+  color: #fff;
+  background: var(--accent);
+  border-bottom-right-radius: 5px;
+}
+
+.message-bubble-error {
+  color: var(--error);
+  background: #f8eaea;
+}
+
+.status-message {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.status-pulse {
+  width: 6px;
+  height: 6px;
+  margin: 0;
+  box-shadow: none;
+  animation: pulse 1.2s ease-in-out infinite;
+}
+
+.composer {
+  position: relative;
+  margin: 0 22px 22px;
+  padding: 14px 14px 38px 18px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: #fff;
+}
+
+.composer textarea {
+  width: calc(100% - 54px);
+  min-height: 28px;
+  resize: none;
+  border: 0;
+  outline: 0;
+  color: var(--foreground);
+  background: transparent;
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.composer textarea::placeholder {
+  color: #a4aaa5;
+}
+
+.composer button {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 10px;
+  color: #fff;
+  background: var(--accent);
+  cursor: pointer;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.composer button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.composer button:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.composer button span {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.composer p {
+  position: absolute;
+  bottom: 10px;
+  left: 18px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 1; }
+}
+
+@media (max-width: 600px) {
+  .chat-shell {
+    padding: 0;
+  }
+
+  .chat-panel {
+    min-height: 100vh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .chat-header {
+    padding: 28px 22px 24px;
+  }
+
+  .message-list {
+    padding: 26px 22px;
+  }
+
+  .composer {
+    margin: 0 14px 14px;
+  }
 }

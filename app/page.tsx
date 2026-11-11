@@ -1,69 +1,242 @@
-import Image from "next/image";
+"use client";
+
+import { FormEvent, useState } from "react";
+
+interface ChatMessage {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  isError?: boolean;
+}
+
+interface StreamEvent {
+  type: "status" | "answer" | "error";
+  message: string;
+}
+
+const INITIAL_MESSAGE: ChatMessage = {
+  id: "welcome",
+  role: "assistant",
+  content:
+    "Ask me about a current topic, compare options, or revisit something we discussed.",
+};
 
 export default function Home() {
+  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
+  const [input, setInput] = useState("");
+  const [status, setStatus] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const message = input.trim();
+
+    if (!message || isLoading) {
+      return;
+    }
+
+    const userMessage: ChatMessage = {
+      id: crypto.randomUUID(),
+      role: "user",
+      content: message,
+    };
+    setMessages((currentMessages) => [...currentMessages, userMessage]);
+    setInput("");
+    setStatus("Starting...");
+    setIsLoading(true);
+
+    try {
+      await streamChat(message);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Something went wrong.";
+      appendMessage({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: errorMessage,
+        isError: true,
+      });
+      setStatus("");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  async function streamChat(message: string): Promise<void> {
+    const response = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        userId: getUserId(),
+        conversationId: getConversationId(),
+        message,
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        clientTimestamp: new Date().toISOString(),
+      }),
+    });
+
+    if (!response.body) {
+      throw new Error("The server returned an empty response.");
+    }
+
+    if (!response.ok) {
+      throw new Error(`The request failed with status ${response.status}.`);
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const { done, value } = await reader.read();
+      buffer += decoder.decode(value, { stream: !done });
+
+      const events = buffer.split("\n\n");
+      buffer = events.pop() ?? "";
+
+      for (const rawEvent of events) {
+        const event = parseStreamEvent(rawEvent);
+        if (event) {
+          handleStreamEvent(event);
+        }
+      }
+
+      if (done) {
+        break;
+      }
+    }
+  }
+
+  function handleStreamEvent(event: StreamEvent): void {
+    if (event.type === "status") {
+      setStatus(event.message);
+      return;
+    }
+
+    if (event.type === "error") {
+      appendMessage({
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: event.message,
+        isError: true,
+      });
+      setStatus("");
+      return;
+    }
+
+    appendMessage({
+      id: crypto.randomUUID(),
+      role: "assistant",
+      content: event.message,
+    });
+    setStatus("");
+  }
+
+  function appendMessage(message: ChatMessage): void {
+    setMessages((currentMessages) => [...currentMessages, message]);
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <main className="chat-shell">
+      <section className="chat-panel" aria-label="Minimi chat">
+        <header className="chat-header">
+          <div>
+            <p className="eyebrow">MINIMI</p>
+            <h1>Research clearly.</h1>
+            <p className="header-description">
+              A focused web-search assistant for answers that stay grounded.
+            </p>
+          </div>
+          <span className="status-dot" aria-label="Ready" />
+        </header>
+
+        <div className="message-list" aria-live="polite">
+          {messages.map((chatMessage) => (
+            <article
+              className={`message-row ${chatMessage.role === "user" ? "message-row-user" : ""}`}
+              key={chatMessage.id}
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+              <div
+                className={`message-bubble ${chatMessage.role === "user" ? "message-bubble-user" : "message-bubble-assistant"} ${chatMessage.isError ? "message-bubble-error" : ""}`}
+              >
+                {chatMessage.content}
+              </div>
+            </article>
+          ))}
+          {status && (
+            <p className="status-message" role="status">
+              <span className="status-pulse" />
+              {status}
+            </p>
+          )}
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+
+        <form className="composer" onSubmit={handleSubmit}>
+          <label className="sr-only" htmlFor="chat-input">
+            Message
+          </label>
+          <textarea
+            id="chat-input"
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                event.currentTarget.form?.requestSubmit();
+              }
+            }}
+            placeholder="Ask a question..."
+            rows={1}
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            disabled={!input.trim() || isLoading}
+            aria-label="Send message"
           >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
+            <span aria-hidden="true">↑</span>
+          </button>
+          <p>Enter to send · Shift + Enter for a new line</p>
+        </form>
+      </section>
+    </main>
   );
+}
+
+function parseStreamEvent(rawEvent: string): StreamEvent | undefined {
+  const dataLine = rawEvent
+    .split("\n")
+    .find((line) => line.startsWith("data:"));
+
+  if (!dataLine) {
+    return undefined;
+  }
+
+  try {
+    return JSON.parse(dataLine.slice(5).trim()) as StreamEvent;
+  } catch {
+    return {
+      type: "error",
+      message: "The server returned an unreadable event.",
+    };
+  }
+}
+
+function getUserId(): string {
+  return getOrCreateStorageId("minimi-user-id", "user");
+}
+
+function getConversationId(): string {
+  return getOrCreateStorageId("minimi-conversation-id", "conversation");
+}
+
+function getOrCreateStorageId(key: string, prefix: string): string {
+  const existingId = window.localStorage.getItem(key);
+  if (existingId) {
+    return existingId;
+  }
+
+  const newId = `${prefix}-${crypto.randomUUID()}`;
+  window.localStorage.setItem(key, newId);
+  return newId;
 }
