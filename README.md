@@ -80,3 +80,8 @@ The single search tool is defined in `src/search/tool.ts`, with the provider
 contract in `src/search/provider.ts`. Tavily responses are validated, shaped
 into compact evidence cards, de-duplicated by URL, capped by domain, and
 cached briefly for repeated non-reverification queries.
+
+The budgeted loop in `src/agent/loop.ts` runs bounded search rounds in parallel,
+forces a final answer at route limits, and permits at most one upward
+escalation. Search and model failures remain explicit in the loop result rather
+than becoming silent success responses.
