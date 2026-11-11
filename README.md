@@ -66,3 +66,8 @@ Turn history is stored as append-only JSONL files under the ignored `data/`
 directory. The storage implementation is exposed through a `TurnStore`
 interface, so the persistence backend can be replaced without changing agent
 logic.
+
+The preparation layer in `src/agent/prepare.ts` uses an injectable clock,
+time-zone-aware date resolution, and bounded history compaction before any
+model call. Relative dates are resolved with `chrono-node`; missing historical
+records are surfaced through explicit preparation flags.
